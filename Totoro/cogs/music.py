@@ -1,6 +1,7 @@
 from discord.ext import commands
 from core import TotoroBot
 
+import discord
 import pomice
 import logging
 import asyncio
@@ -22,8 +23,15 @@ class Music(commands.Cog):
     def __init__(self, bot: TotoroBot):
         self.bot = bot
         self.music_logger = logging.getLogger("music-master")
+        if self.bot.config.get("host", category="lavalink"):
+            self.bot.loop.create_task(self.create_ll_connection())
+        else:
+            self.music_logger.warn(
+                "Lavalink Credentials Missing: "
+                "unloading recommended..."
+            )
 
-    async def create_ll_connection(self) -> None:
+    async def create_ll_connection(self) -> None: 
         """Create a connection to LavaLink node"""
         await self.bot.wait_until_ready()
         try:
@@ -79,6 +87,17 @@ class Music(commands.Cog):
         await ctx.author.voice.channel.connect(cls=Player)
         await ctx.send(f"Joined `{ctx.author.voice.channel.name}`")
 
+    @commands.command()
+    async def play(self, ctx: commands.Context, *, query: str):
+        """Play a specified song using"""
+        player: Player= ctx.voice_client
+        results = player.get_tracks(query, ctx=ctx)
+        await ctx.send(
+            embed=discord.Embed(
+                title=""
+            )
+
+        )
 
 async def setup(bot: TotoroBot):
     await bot.add_cog(Music(bot))

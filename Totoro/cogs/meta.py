@@ -5,6 +5,7 @@ import discord
 
 
 class Meta(commands.Cog):
+    """Commands more related to the Totoro itself"""
     def __init__(self, bot: TotoroBot):
         self.bot = bot
 

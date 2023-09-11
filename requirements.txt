@@ -1,4 +1,3 @@
-discord.py
-PyNaCl
+discord.py[voice]
 jishaku
 pomice
