@@ -1,0 +1,10 @@
+token = "MTEzNzg5MjU5NTY4MzU2NTU2OA.GXI5FA._wF7Whppdyz9V7XiFti0KFSvg4x1G7Oip52hqQ" # Insert bot token here. Found on Discord Developer Portal
+webhook_id = 1140130004387246241
+
+
+[lavalink]
+host=""
+password=""
+port=1234
+spotify_client_id=""
+spotify_client_secret=""
