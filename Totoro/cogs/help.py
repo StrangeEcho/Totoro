@@ -50,6 +50,20 @@ class TotoroHelpCommand(commands.HelpCommand):
             )
         )
 
+    async def send_command_help(self, cmd: commands.Command):
+        await self.get_destination().send(
+            embed=discord.Embed(
+                title=f"Information for Command: `{cmd.name}`",
+                description=cmd.qualified_name
+            ).add_field(
+                name="Module/Cog",
+                value=cmd.cog_name
+            ).add_field(
+                name="Cooldown",
+                value=cmd.__
+            )
+        )
+
 
 class Help(commands.Cog):
     def __init__(self, bot: TotoroBot):
