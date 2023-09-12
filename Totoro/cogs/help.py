@@ -48,21 +48,25 @@ class TotoroHelpCommand(commands.HelpCommand):
     async def send_command_help(self, cmd: commands.Command):
         aliases = cmd.aliases
         cd = cmd._buckets._cooldown
-        await self.get_destination().send(
-            embed=discord.Embed(
-                title=f"Information for Command: `{cmd.name}`",
-                description=cmd.qualified_name
-            ).add_field(
-                name="Module/Cog",
-                value=cmd.cog_name
-            ).add_field(
+        embed = discord.Embed(
+            title=f"Command: `{cmd.qualified_name}`",
+            description=cmd.description,
+            color=discord.Color.green()
+        ).add_field(
+            name="Module",
+            value=f"`{cmd.cog_name}`"
+        )
+        if cd:
+            embed.add_field(
                 name="Cooldown",
-                value=f"Use {cd.rate} time(s) per {cd.per} second(s)"
-            ).add_field(
+                value=f"Rate: {cd.rate} | Cooldown(in seconds): {cd.per}"
+            )
+        if aliases:
+            embed.add_field(
                 name="Aliases",
                 value="\n".join(aliases)
             )
-        )
+        await self.get_destination().send(embed=embed)
 
 class Help(commands.Cog):
     def __init__(self, bot: TotoroBot):
