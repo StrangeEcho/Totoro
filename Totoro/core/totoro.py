@@ -36,11 +36,11 @@ class TotoroBot(commands.AutoShardedBot):
             help_command=commands.MinimalHelpCommand(),
             intents=discord.Intents.all(),
         )
-        self.owner_ids = set(self.config.get("owner_ids"))
         self.logger: logging.Logger = logging.getLogger("totoro-main")
         self.config: TotoroConfigHandler = TotoroConfigHandler()
         self.node_pool = mafic.NodePool(self)
-
+        self.owner_ids = set(self.config.get("owner_ids"))
+        
     async def startup(self) -> None:
         """Startup method for the bot"""
         self.logger.info("Starting Totoro login process...")
