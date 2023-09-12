@@ -32,10 +32,11 @@ class TotoroBot(commands.AutoShardedBot):
 
     def __init__(self):
         super().__init__(
-            command_prefix="t!",
+            command_prefix=commands.when_mentioned_or("t!"),
             help_command=commands.MinimalHelpCommand(),
             intents=discord.Intents.all(),
         )
+        self.owner_ids = set(self.config.get("owner_ids"))
         self.logger: logging.Logger = logging.getLogger("totoro-main")
         self.config: TotoroConfigHandler = TotoroConfigHandler()
         self.node_pool = mafic.NodePool(self)
