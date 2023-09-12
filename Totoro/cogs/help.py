@@ -14,11 +14,8 @@ class TotoroHelpCommand(commands.HelpCommand):
 
         await self.get_destination().send(
             embed=discord.Embed(
-                title=":wave: Hello there I am Totoro",
-                description="Totoro is a personal music/utility bot that ruben made for sum reason\n"
-                            f"**[Library Ver]** __Discord.py__: `{discord.__version__}`\n"
-                            f"**[Language Ver]** __Python__: `{platform.python_version()}`\n"
-                            f"Commands: `{len(bot.commands)}` Modules: `{len(bot.cogs)}`",
+                title=":wave: Hi there I am Totoro",
+                description="I am a private music/utility bot based off the movie My Neighbor Totoro. uhhhhhhh- and thats basically all",
                 color=discord.Color.green()
             ).add_field(
                 name="Module List",

@@ -1,6 +1,7 @@
 from discord.ext import commands
 from core import TotoroBot
 
+import platform
 import discord
 
 
@@ -23,8 +24,29 @@ class Meta(commands.Cog):
                 color=discord.Color.green(),
             )
         )
-        
-
+    
+    @commands.command()
+    async def info(self, ctx: commands.Context):
+        """Information about the bot itself"""
+        await ctx.send(
+            embed=discord.Embed(
+                title="Hi again! Heres sum info about me",
+                description="First and foremost [this](https://github.com/Yat-o/Totoro) right here is my source code",
+                color=discord.Color.green()
+            ).add_field(
+                name="Cached Users",
+                value=f"`{len(self.bot.users)}`"
+            ).add_field(
+                name="Commands/Modules",
+                value=f"I currently have {len(self.bot.commands)} commands and {len(self.bot.cogs)} modules"
+            ).add_field(
+                name="Recognized Ownership ID(s)",
+                value="\n".join(self.bot.owner_ids)
+            ).add_field(
+                name="Misc",
+                value=f"Discord.py Version: {discord.__version__}\nPython Version: {platform.python_version()}"
+            )
+        )
 
 async def setup(bot: TotoroBot):
     await bot.add_cog(Meta(bot))
