@@ -9,6 +9,7 @@ import discord
 import mafic
 import asyncio
 
+
 class TotoroConfigHandler:
     """A simple config helper for Totoro"""
 
@@ -40,7 +41,7 @@ class TotoroBot(commands.AutoShardedBot):
         self.config: TotoroConfigHandler = TotoroConfigHandler()
         self.node_pool = mafic.NodePool(self)
         self.owner_ids = set(self.config.get("owner_ids"))
-        
+
     async def startup(self) -> None:
         """Startup method for the bot"""
         self.logger.info("Starting Totoro login process...")
@@ -57,7 +58,7 @@ class TotoroBot(commands.AutoShardedBot):
                     self.logger.info(f"{cog}... success")
                 except commands.ExtensionError as e:
                     self.logger.warn(f"{cog}... failure\n - {e}")
-    
+
     async def _establish_lava_node(self) -> None:
         """Makes a connection to local lavalink node and adds to mafic's node pool"""
         logger = logging.getLogger("music")
@@ -68,13 +69,18 @@ class TotoroBot(commands.AutoShardedBot):
                 port=2333,
                 password="youshallnotpass",
                 label="totoroMAIN",
-
             )
         except RuntimeError as e:
             logger.warn(
                 "Failed Initializing Lavalink connection | Unloading Music module recommended\n"
                 f"Error:\n{''.join(traceback.format_exception(e))}"
             )
+
+    async def close(self):
+        self.logger.info("Shutting down Totoro now...")
+        self.logger.info("Closing Mafic Lavalink connection pool")
+        await self.node_pool.close()
+        await super().close()
 
     async def on_ready(self):
         self.logger.info(f"{self.user} is ready!")
