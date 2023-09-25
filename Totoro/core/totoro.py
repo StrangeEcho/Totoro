@@ -7,7 +7,6 @@ import tomllib
 import logging
 import discord
 import mafic
-import asyncio
 
 
 class TotoroConfigHandler:
@@ -37,7 +36,7 @@ class TotoroBot(commands.AutoShardedBot):
             help_command=commands.MinimalHelpCommand(),
             intents=discord.Intents.all(),
         )
-        self.logger: logging.Logger = logging.getLogger("totoro-main")
+        self.logger: logging.Logger = logging.getLogger(__name__)
         self.config: TotoroConfigHandler = TotoroConfigHandler()
         self.node_pool = mafic.NodePool(self)
         self.owner_ids = set(self.config.get("owner_ids"))
@@ -57,12 +56,11 @@ class TotoroBot(commands.AutoShardedBot):
                     await self.load_extension(cog)
                     self.logger.info(f"{cog}... success")
                 except commands.ExtensionError as e:
-                    self.logger.warn(f"{cog}... failure\n - {e}")
+                    self.logger.warn(f"{cog}... failure\n - {''.join(traceback.format_exception(e))}")
 
     async def _establish_lava_node(self) -> None:
         """Makes a connection to local lavalink node and adds to mafic's node pool"""
-        logger = logging.getLogger("music")
-        logger.info("Initializing Mafic NodePool")
+        self.logger.info("Initializing Mafic NodePool")
         try:
             node = await self.node_pool.create_node(
                 host="127.0.0.1",
@@ -71,7 +69,7 @@ class TotoroBot(commands.AutoShardedBot):
                 label="totoroMAIN",
             )
         except RuntimeError as e:
-            logger.warn(
+            self.logger.warn(
                 "Failed Initializing Lavalink connection | Unloading Music module recommended\n"
                 f"Error:\n{''.join(traceback.format_exception(e))}"
             )

@@ -1,3 +1,5 @@
 discord.py[voice]
 jishaku
 mafic
+humanize
+async-cse

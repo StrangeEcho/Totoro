@@ -1,7 +1,9 @@
 from discord.ext import commands
 from core import TotoroBot
+from utils import humanize_timedelta
 from discord.ui import Select, View
 from typing import Optional
+from datetime import timedelta
 
 import mafic
 import discord
@@ -113,6 +115,72 @@ class Music(commands.Cog):
             await player.disconnect()
             return
         await ctx.send("No active player")
+    
+    @commands.command(aliases=["next"])
+    async def skip(self, ctx: commands.Context):
+        """Skip the current song"""
+        player: TotoroPlayer = ctx.voice_client
+        if player:
+            await player.stop()
+            if player.current:
+                await ctx.send(f"Now playing {player.current.title}")
+            return
+        await ctx.send("No active player")
+    
+    @commands.command()
+    async def pause(self, ctx: commands.Context):
+        """Toggle the pause setting on the current player"""
+        player: TotoroPlayer = await ctx.voice_client
+        if player:
+            await player.pause(not player.paused)
+            return
+        await ctx.send("No active player")
+    
+    @commands.command()
+    async def volume(self, ctx: commands.Context, volume: int):
+        if volume < 0 or volume > 100:
+            return await ctx.send("Volume range must be within 0 and 100")
+        player: TotoroPlayer = ctx.voice_client
+        await player.set_volume(volume)
+        await ctx.send(f"Set player volume to {volume}")
+    
+    @commands.command(aliases=["np"])
+    async def nowplaying(self, ctx: commands.Context):
+        player: TotoroPlayer = ctx.voice_client
+        if not player or not player.current:
+            return await ctx.send("There is currently no player or current track playing")
+        np = player.current
+        await ctx.send(
+            embed=discord.Embed(
+                title=np.title,
+                url=np.uri,
+                description=f"From: {np.author}",
+                color=discord.Color.green()
+            ).set_thumbnail(
+                url=np.artwork_url
+            ).add_field(
+                name="Length",
+                value=humanize_timedelta(timedelta(milliseconds=np.length), precise=True)
+            ).add_field(
+                name="Seekable",
+                value=np.seekable
+            )
+        )
+
+    @commands.command()
+    async def nodestats(self, ctx: commands.Context):
+        """Displays statistics about Totoro's connected Lavalink Node(s)"""
+        embed = discord.Embed(title="Node Statistics", color=discord.Color.green())
+        for node in self.bot.node_pool.nodes:
+            nodestat = node.stats
+            embed.add_field(
+                name=f"Node: {node.label}",
+                value=f"Uptime: {humanize_timedelta(nodestat.uptime)}\n"
+                      f"CPU Load: {nodestat.cpu.lavalink_load}\n"
+                      f"Player(s): {nodestat.player_count} | Active: {nodestat.playing_player_count}"
+            )
+        await ctx.send(embed=embed)
+
 
 
 async def setup(bot: TotoroBot):
