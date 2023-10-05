@@ -7,6 +7,8 @@ import os
 import tomllib
 import logging
 import discord
+from discord.ext.commands import errors
+from discord.ext.commands.context import Context
 import pomice
 
 
@@ -76,6 +78,9 @@ class TotoroBot(commands.AutoShardedBot):
                 "spotify_client_secret", category="lavalink"
             ),
         )
+    
+    async def on_command_error(self, ctx: commands.Context, exception: commands.CommandError) :
+        await ctx.send(f"Unhandled Exception Caught:\n{exception}")
 
     async def close(self):
         self.logger.info("Shutting down Totoro now...")
