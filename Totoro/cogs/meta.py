@@ -12,6 +12,13 @@ class Meta(commands.Cog):
         self.bot = bot
 
     @commands.command()
+    @commands.is_owner()
+    async def logout(self, ctx: commands.Context):
+        """Logout/Close the bot process"""
+        await ctx.send("Logging out now...")
+        await self.bot.close()
+
+    @commands.command()
     async def ping(self, ctx: commands.Context):
         """Return the Gateway/WS connection latency"""
         msg = await ctx.send("Measuring Latency...")
@@ -35,25 +42,34 @@ class Meta(commands.Cog):
                 description="First and foremost [this](https://github.com/Yat-o/Totoro) right here is my source code",
                 color=discord.Color.green(),
             )
-            .add_field(name="Cached Users", value=f"`{len(self.bot.users)}`")
-            .add_field(
-                name="Commands/Modules",
-                value=f"I currently have `{len(self.bot.commands)}` commands and `{len(self.bot.cogs)}` modules",
+            .set_thumbnail(url=self.bot.user.display_avatar.url)
+            .set_footer(
+                text=f"This bot was made using discord.py {discord.__version__} and Python version {platform.python_version()}",
+                icon_url=ctx.author.display_avatar.url,
             )
             .add_field(
-                name="Recognized Ownership ID(s)",
-                value="\n".join(self.bot.owner_ids) or self.bot.owner_id,
+                name="Guilds | Users",
+                value=f"Guilds: {len(self.bot.guilds)} | Users: {len(self.bot.users)}",
             )
             .add_field(
-                name="Misc",
-                value=f"Discord.py Version: `{discord.__version__}`\nPython Version: `{platform.python_version()}`",
+                name="Uptime", value=discord.utils.format_dt(self.bot.start_time, "R")
+            )
+            .add_field(
+                name="Owner(s)",
+                value="\n".join(
+                    [str(self.bot.get_user(oid)) for oid in self.bot.owner_ids]
+                ),
+            )
+            .add_field(
+                name="Cogs | Commands",
+                value=f"Cogs: {len(self.bot.cogs)} | Commands: {len(self.bot.commands)}",
+            )
+            .add_field(
+                name="Latency",
+                value=f"{round(self.bot.latency * 1000)}ms",
+                inline=False,
             )
         )
-
-    @commands.command()
-    async def say(self, ctx: commands.Context, *, msg):
-        """Make the bot say sum"""
-        await ctx.send(msg)
 
 
 async def setup(bot: TotoroBot):

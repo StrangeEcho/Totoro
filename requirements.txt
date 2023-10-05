@@ -1,5 +1,5 @@
 discord.py[voice]
 jishaku
-mafic
+pomice
 humanize
 async-cse

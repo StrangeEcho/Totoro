@@ -1,12 +1,13 @@
 from discord.ext import commands
 from typing import Any, Optional
+from datetime import datetime
 
 import traceback
 import os
 import tomllib
 import logging
 import discord
-import mafic
+import pomice
 
 
 class TotoroConfigHandler:
@@ -38,12 +39,13 @@ class TotoroBot(commands.AutoShardedBot):
         )
         self.logger: logging.Logger = logging.getLogger(__name__)
         self.config: TotoroConfigHandler = TotoroConfigHandler()
-        self.node_pool = mafic.NodePool(self)
+        self.node_pool = pomice.NodePool()
         self.owner_ids = set(self.config.get("owner_ids"))
+        self.start_time = datetime.now()
 
     async def startup(self) -> None:
         """Startup method for the bot"""
-        self.logger.info("Starting Totoro login process...")
+        self.logger.info(f"Starting Totoro (PID {os.getpid()})")
         await self._load_extensions()
         await self.start(self.config.get("token"))
 
@@ -56,33 +58,29 @@ class TotoroBot(commands.AutoShardedBot):
                     await self.load_extension(cog)
                     self.logger.info(f"{cog}... success")
                 except commands.ExtensionError as e:
-                    self.logger.warn(f"{cog}... failure\n - {''.join(traceback.format_exception(e))}")
+                    self.logger.warn(
+                        f"{cog}... failure\n - {''.join(traceback.format_exception(e))}"
+                    )
 
     async def _establish_lava_node(self) -> None:
-        """Makes a connection to local lavalink node and adds to mafic's node pool"""
-        self.logger.info("Initializing Mafic NodePool")
-        try:
-            node = await self.node_pool.create_node(
-                host="127.0.0.1",
-                port=2333,
-                password="youshallnotpass",
-                label="totoroMAIN",
-            )
-        except RuntimeError as e:
-            self.logger.warn(
-                "Failed Initializing Lavalink connection | Unloading Music module recommended\n"
-                f"Error:\n{''.join(traceback.format_exception(e))}"
-            )
+        """Makes a connection to local lavalink node and adds to pomice's node pool"""
+        self.logger.info("Initializing Lavalink Node Connection Pool")
+        await self.node_pool.create_node(
+            bot=self,
+            host="127.0.0.1",
+            port=2333,
+            password="youshallnotpass",
+            identifier="totoro-local",
+            spotify_client_id=self.config.get("spotify_client_id", category="lavalink"),
+            spotify_client_secret=self.config.get(
+                "spotify_client_secret", category="lavalink"
+            ),
+        )
 
     async def close(self):
         self.logger.info("Shutting down Totoro now...")
-        self.logger.info("Closing Mafic Lavalink connection pool")
-        await self.node_pool.close()
+        await self.node_pool.disconnect()
         await super().close()
 
     async def on_ready(self):
         self.logger.info(f"{self.user} is ready!")
-        await self._establish_lava_node()
-
-    async def on_connect(self):
-        self.logger.info("All Shard Connections Established...")
