@@ -1,8 +1,8 @@
-from discord.ext import commands
-from core import TotoroBot
-
 import platform
+
 import discord
+from core import TotoroBot
+from discord.ext import commands
 
 
 class Meta(commands.Cog):

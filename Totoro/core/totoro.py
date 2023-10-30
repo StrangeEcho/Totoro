@@ -1,15 +1,13 @@
-from discord.ext import commands
-from typing import Any, Optional
-from datetime import datetime
-
-import traceback
+import logging
 import os
 import tomllib
-import logging
+import traceback
+from datetime import datetime
+from typing import Any, Optional
+
 import discord
-from discord.ext.commands import errors
-from discord.ext.commands.context import Context
 import pomice
+from discord.ext import commands
 
 
 class TotoroConfigHandler:
@@ -18,14 +16,9 @@ class TotoroConfigHandler:
     with open("./Totoro/core/config.toml", "rb") as confile:
         config: dict[Any, Any] = tomllib.load(confile)
 
-    def get(self, config_name: str, *, category: Optional[str] = None) -> Optional[Any]:
-        """Fetch the specified config from the config.toml file"""
-        if category:
-            try:
-                return self.config[category][config_name]
-            except KeyError:
-                return None
-        return self.config.get(config_name)
+    def get(self, config_name: str) -> Any:
+        """Fetch specified config from config.toml file"""
+        return self.config.get(config_name) # Returns None if no config found
 
 
 class TotoroBot(commands.AutoShardedBot):
@@ -64,23 +57,10 @@ class TotoroBot(commands.AutoShardedBot):
                         f"{cog}... failure\n - {''.join(traceback.format_exception(e))}"
                     )
 
-    async def _establish_lava_node(self) -> None:
-        """Makes a connection to local lavalink node and adds to pomice's node pool"""
-        self.logger.info("Initializing Lavalink Node Connection Pool")
-        await self.node_pool.create_node(
-            bot=self,
-            host="127.0.0.1",
-            port=2333,
-            password="youshallnotpass",
-            identifier="totoro-local",
-            spotify_client_id=self.config.get("spotify_client_id", category="lavalink"),
-            spotify_client_secret=self.config.get(
-                "spotify_client_secret", category="lavalink"
-            ),
-        )
-    
-    async def on_command_error(self, ctx: commands.Context, exception: commands.CommandError) :
-        await ctx.send(f"Unhandled Exception Caught:\n{exception}")
+    async def on_command_error(
+        self, ctx: commands.Context, exception: commands.CommandError
+    ):
+        self.logger.error(f"Unhandled Exception Caught:\n{''.join(traceback.format_exception(exception))}")
 
     async def close(self):
         self.logger.info("Shutting down Totoro now...")

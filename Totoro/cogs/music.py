@@ -1,12 +1,12 @@
-from discord.ext import commands
-from core import TotoroBot
-from utils import humanize_timedelta
-from discord.ui import Select, View
-from typing import Literal, Optional
+import asyncio
 from datetime import timedelta
 
-import pomice
 import discord
+import pomice
+from core import TotoroBot
+from utils import humanize_timedelta
+from discord.ext import commands
+from discord.ui import Select, View
 
 
 class TotoroPlayer(pomice.Player):
@@ -21,6 +21,13 @@ class TotoroPlayer(pomice.Player):
         """Pomice's implmentation of a queue system"""
         return self._queue
 
+class SelectorView(View):
+    def __init__(self):
+        super().__init__(timeout=30)
+    
+    async def on_timeout(self) -> None:
+        self.clear_items()
+
 
 class TotoroTrackSelector(Select):
     def __init__(self, ctx: commands.Context, tracks: list[pomice.Track]):
@@ -29,7 +36,7 @@ class TotoroTrackSelector(Select):
         )
         self.ctx = ctx
         self.tracks = tracks
-        for i, track in enumerate(tracks, 1):
+        for i, track in enumerate(tracks[:5], 1):
             self.add_option(
                 label=f"{i}. {track.title[:50]}",
                 description=f"From: {track.author}",
@@ -37,6 +44,7 @@ class TotoroTrackSelector(Select):
             )
 
     async def callback(self, inter: discord.Interaction):
+        await inter.response.defer()
         if inter.user.id != self.ctx.author.id:
             return await inter.response.send_message(
                 "You are not able to select from this menu",
@@ -44,36 +52,39 @@ class TotoroTrackSelector(Select):
                 delete_after=5,
             )
         player: TotoroPlayer = self.ctx.voice_client
-        track: pomice.Track = self.tracks[self.values[0]]
-        if not player.current:
+        track: pomice.Track = self.tracks[int(self.values[0])]
+        if player.current:
+            player.queue.put(track)
+            await inter.followup.send(f"Added {track.title} to the queue")
+        else:
             await player.play(track)
-            await self.ctx.send(f"Now playing: {track.title}")
-            return
-        player.queue.put(track)
-        await self.ctx.send(f"Added {track.title} to the queue")
+            await inter.followup.send(f"Now playing {track.title}")
+     
+        
 
 
 class Music(commands.Cog):
     def __init__(self, bot: TotoroBot):
         self.bot = bot
+        if self.bot.node_pool.node_count == 0:
+            asyncio.get_event_loop().create_task(self._establish_lava_node())
 
-    def convert_time(self, length: int, mode: Literal["ms", "s"] = "ms") -> str:
+    async def _establish_lava_node(self) -> None:
+        """Makes a connection to local lavalink node and adds to pomice's node pool"""
+        await self.bot.wait_until_ready()
+        await self.bot.node_pool.create_node(
+            bot=self.bot,
+            host="127.0.0.1",
+            port=2333,
+            password="youshallnotpass",
+            identifier="totoro-local",
+            spotify_client_id=self.bot.config.get("spotify_client_id"),
+            spotify_client_secret=self.bot.config.get("spotify_client_secret")
+        )
+
+    def convert_time(self, length: int) -> str:
         """Convert seconds/milliseconds to formatted timedelta object"""
-        if mode == "s":
-            return str(timedelta(seconds=length))
-        return str(timedelta(milliseconds=length))
-
-    async def connect_vc(self, ctx: commands.Context) -> Optional[discord.Message]:
-        """Voice channel connection handler"""
-        if not ctx.author.voice:
-            return await ctx.send(
-                "You're not in a Voice Channel. Join one and try again."
-            )
-        if ctx.voice_client:
-            return await ctx.send("There is an active player already in this guild")
-        channel = ctx.author.voice.channel
-        await channel.connect(cls=TotoroPlayer, self_deaf=True)
-        await ctx.send(f"Joined channel {channel.name}")
+        return humanize_timedelta(timedelta(milliseconds=length))
 
     @commands.Cog.listener("on_pomice_track_end")
     async def track_end(self, player: TotoroPlayer, track, _):
@@ -94,22 +105,54 @@ class Music(commands.Cog):
     @commands.command()
     async def connect(self, ctx: commands.Context):
         """Connect Totoro to a voice channel with TotoroPlayer instance"""
-        await self.connect_vc(ctx)
+        if not ctx.author.voice:
+            return await ctx.send(
+                ":x: You're not in a Voice Channel. Join one and try again."
+            )
+        if ctx.voice_client:
+            return await ctx.send("There is an active player already in this guild")
+        channel = ctx.author.voice.channel
+        await channel.connect(cls=TotoroPlayer, self_deaf=True)
+        await ctx.send(f":white_check_mark: Joined channel {channel.name}")
 
     @commands.command()
     async def play(self, ctx: commands.Context, *, query: str):
         """Play a song through the bot"""
-        player: TotoroPlayer = ctx.voice_client
-        if not player:
+        if not ctx.author.voice:
             return await ctx.send(
-                f"No active player. Run command `{ctx.clean_prefix}connect` to start one"
+                ":x: You're not in a Voice Channel. Join one and try again."
             )
-        track = (await player.get_tracks(query, ctx=ctx))[0]
-        if player.current:
+        if not ctx.voice_client:
+            await ctx.author.voice.channel.connect(cls=TotoroPlayer, self_deaf=True)
+        player: TotoroPlayer = ctx.voice_client
+        tracks = await player.get_tracks(query, ctx=ctx)
+        if not tracks:
+            return await ctx.send(":x: No tracks found with that query")
+        if isinstance(tracks, pomice.Playlist):
+            for track in tracks.tracks:
+                player.queue.put(track)
+            msg = await ctx.send(f":scroll: Enqueued {tracks.track_count} tracks to the queue")
+            if not player.current:
+                track = player.queue.get()
+                await player.play(track)
+                await msg.reply(f":notes: Now playing {track.title}")
+            return
+        if len(tracks) == 1:
+            track = tracks[0]
             player.queue.put(track)
-            return await ctx.send(f"Added {track.title} to queue")
-        await player.play(track)
-        await ctx.send(f"Now playing {track.title}")
+            if not player.current:
+                await player.play(player.queue.get())
+            return await ctx.send(f":scroll: Enqueued {track.title}")
+        await ctx.send(
+            embed=discord.Embed(
+                title=f"Results for query: {query}",
+                description="Select 1 of 5 Tracks",
+                color=discord.Color.green()
+            ).set_thumbnail(
+                url="https://images.vexels.com/media/users/3/184267/isolated/preview/8ec63d26d98d295993e1b29d341f1502-music-beamed-notes-icon.png"
+            ),
+            view=SelectorView().add_item(TotoroTrackSelector(ctx, tracks))
+        )
 
     @commands.command()
     async def disconnect(self, ctx: commands.Context):
@@ -170,6 +213,7 @@ class Music(commands.Cog):
             .add_field(name="Filters", value=np.filters)
             .add_field(name="Seekable", value=np.is_seekable)
         )
+
 
 async def setup(bot: TotoroBot):
     await bot.add_cog(Music(bot))

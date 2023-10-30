@@ -1,7 +1,6 @@
-from discord.ext import commands
-from core import TotoroBot
-
 import discord
+from core import TotoroBot
+from discord.ext import commands
 
 
 class TotoroHelpCommand(commands.HelpCommand):

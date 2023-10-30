@@ -1,11 +1,9 @@
+import asyncio
+import os
+
 from core import TotoroBot
 
-import asyncio
-
-bot = TotoroBot()
-
 if __name__ == "__main__":
-    try:
-        asyncio.run(bot.startup())
-    except KeyboardInterrupt:
-        asyncio.run(bot.close())
+    if os.name == "nt":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    asyncio.run(TotoroBot().startup())
