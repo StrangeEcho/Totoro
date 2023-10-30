@@ -18,7 +18,7 @@ class TotoroConfigHandler:
 
     def get(self, config_name: str) -> Any:
         """Fetch specified config from config.toml file"""
-        return self.config.get(config_name) # Returns None if no config found
+        return self.config.get(config_name)  # Returns None if no config found
 
 
 class TotoroBot(commands.AutoShardedBot):
@@ -60,7 +60,9 @@ class TotoroBot(commands.AutoShardedBot):
     async def on_command_error(
         self, ctx: commands.Context, exception: commands.CommandError
     ):
-        self.logger.error(f"Unhandled Exception Caught:\n{''.join(traceback.format_exception(exception))}")
+        self.logger.error(
+            f"Unhandled Exception Caught:\n{''.join(traceback.format_exception(exception))}"
+        )
 
     async def close(self):
         self.logger.info("Shutting down Totoro now...")

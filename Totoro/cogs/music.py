@@ -4,9 +4,9 @@ from datetime import timedelta
 import discord
 import pomice
 from core import TotoroBot
-from utils import humanize_timedelta
 from discord.ext import commands
 from discord.ui import Select, View
+from utils import humanize_timedelta
 
 
 class TotoroPlayer(pomice.Player):
@@ -21,10 +21,11 @@ class TotoroPlayer(pomice.Player):
         """Pomice's implmentation of a queue system"""
         return self._queue
 
+
 class SelectorView(View):
     def __init__(self):
         super().__init__(timeout=30)
-    
+
     async def on_timeout(self) -> None:
         self.clear_items()
 
@@ -59,8 +60,6 @@ class TotoroTrackSelector(Select):
         else:
             await player.play(track)
             await inter.followup.send(f"Now playing {track.title}")
-     
-        
 
 
 class Music(commands.Cog):
@@ -79,7 +78,7 @@ class Music(commands.Cog):
             password="youshallnotpass",
             identifier="totoro-local",
             spotify_client_id=self.bot.config.get("spotify_client_id"),
-            spotify_client_secret=self.bot.config.get("spotify_client_secret")
+            spotify_client_secret=self.bot.config.get("spotify_client_secret"),
         )
 
     def convert_time(self, length: int) -> str:
@@ -131,7 +130,9 @@ class Music(commands.Cog):
         if isinstance(tracks, pomice.Playlist):
             for track in tracks.tracks:
                 player.queue.put(track)
-            msg = await ctx.send(f":scroll: Enqueued {tracks.track_count} tracks to the queue")
+            msg = await ctx.send(
+                f":scroll: Enqueued {tracks.track_count} tracks to the queue"
+            )
             if not player.current:
                 track = player.queue.get()
                 await player.play(track)
@@ -147,11 +148,11 @@ class Music(commands.Cog):
             embed=discord.Embed(
                 title=f"Results for query: {query}",
                 description="Select 1 of 5 Tracks",
-                color=discord.Color.green()
+                color=discord.Color.green(),
             ).set_thumbnail(
                 url="https://images.vexels.com/media/users/3/184267/isolated/preview/8ec63d26d98d295993e1b29d341f1502-music-beamed-notes-icon.png"
             ),
-            view=SelectorView().add_item(TotoroTrackSelector(ctx, tracks))
+            view=SelectorView().add_item(TotoroTrackSelector(ctx, tracks)),
         )
 
     @commands.command()
