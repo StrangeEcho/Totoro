@@ -6,7 +6,7 @@ import pomice
 from core import TotoroBot
 from discord.ext import commands
 from discord.ui import Select, View
-from utils import humanize_timedelta
+from utils import Paginator, chunk_iter, humanize_timedelta
 
 
 class TotoroPlayer(pomice.Player):
@@ -214,6 +214,23 @@ class Music(commands.Cog):
             .add_field(name="Filters", value=np.filters)
             .add_field(name="Seekable", value=np.is_seekable)
         )
+
+    @commands.command()
+    async def queue(self, ctx: commands.Context):
+        player: TotoroPlayer = ctx.voice_client
+        if not player:
+            return await ctx.send("There is currently no player. No queue found.")
+        embeds = [
+            discord.Embed(
+                title=f"Page: {idx}",
+                description="\n".join([f"{t.author} - {t.title}" for t in page]),
+            )
+            for idx, page in enumerate(
+                chunk_iter(player.queue, 10), 1
+            )  # 10 Tracks per page
+        ]
+        paginator = Paginator(embeds)
+        await paginator.start(ctx)
 
 
 async def setup(bot: TotoroBot):
