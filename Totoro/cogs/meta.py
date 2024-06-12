@@ -1,4 +1,5 @@
 import platform
+import random
 
 import discord
 from core import TotoroBot
@@ -71,9 +72,12 @@ class Meta(commands.Cog):
             )
         )
     
-    @commands.command()
-    async def hello(self, ctx: commands.Context):
-        await ctx.send("Hello")
+    @commands.command(aliases=["8ball"])
+    async def eightball(self, ctx: commands.Context, *, question: str):
+        responses = ["yes", "no", "maybe"]
+        response = random.choice(responses)
+        await ctx.send(f"{question}\nAnswer: {response}")
+
 
 
 async def setup(bot: TotoroBot):
