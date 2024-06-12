@@ -70,6 +70,10 @@ class Meta(commands.Cog):
                 inline=False,
             )
         )
+    
+    @commands.command()
+    async def hello(self, ctx: commands.Context):
+        await ctx.send("Hello")
 
 
 async def setup(bot: TotoroBot):
